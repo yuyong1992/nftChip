@@ -3,110 +3,119 @@ pragma solidity >=0.4.22 <0.9.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract Chip is Ownable, ERC721 {
-
+contract Chip is Ownable, ERC721{
     struct Metadata {
         string name;
         string description;
         string img_url;
-        
     }
-
+    
+    // 合约的所有者，存在变量中方便有需要直接调用
+    address ownerOfContract = msg.sender;
+    
+    // token和元数据的对应
     mapping(uint256 => Metadata) id_to_chip;
+    // token和创作者的对应
+    mapping(uint256 => address) autherOf;
 
-    constructor() public ERC721("Chip", "CHIP") {
+    constructor() ERC721("Chip", "CHIP") {
+        // 这里 baseURI 需要修改为我们的后台接口
         _setBaseURI("https://date.kie.codes/token/");
 
-        mint("sun", "Beautiful!", "http://47.94.4.177:8010/img.png", 0);
-        
+        // 这里是初始化的时候 mint 的token，可以初始化多个
+        mint("sun", "Beautiful!", "http://47.94.4.177:8010/img.png", 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2, 0);
     }
 
+    /*
+     *  设置获取token元数据的接口
+     *  例如：baseURL为：http:www.baseuri.com
+     *  id为 1 的token会自动从：http:www.baseuri.com/1 获取元数据
+    */
     function setBaseURI(string memory baseURI) public onlyOwner {
         _setBaseURI(baseURI);
     }
 
-    function mint(string name, string description, string img_url, uint token_id) internal {
-        // uint256 token_id = id(year, month, day);
-        
-        id_to_chip[token_id] = Metadata(name, description);
+    function mint(string memory name, string memory description, string memory img_url, address auther, uint token_id) internal {
+        id_to_chip[token_id] = Metadata(name, description, img_url);
+        autherOf[token_id] = auther;
         _safeMint(msg.sender, token_id);
     }
 
-    function claim(string name, string description, uint token_id, uint price) external payable {
-        mint(name, description, price, token_id);
-        payable(owner()).transfer(msg.value);
+    function claim(string memory name, string memory description, string memory img_url, address auther, uint token_id) external payable {
+        require(msg.value >= 100000000000000 wei, "create a Chip cost at least 100000000000000 wei");
+        mint(name, description, img_url, auther, token_id);
+        // payable(owner()).transfer(msg.value);
+        address(uint160(owner())).transfer(msg.value);
     }
 
-    function ownerOf(uint token_id) public view returns(address) {
+    function ownerOfChip(uint token_id) public view returns(address) {
         return ownerOf(token_id);
     }
 
-    function get(uint256 token_id) external view returns (string name, string description) {
+    function get(uint256 token_id) external view returns (string memory name, string memory description, string memory img_url, address author) {
         require(_exists(token_id), "token not minted");
         Metadata memory chip = id_to_chip[token_id];
         name = chip.name;
         description = chip.description;
+        img_url = chip.img_url;
+        author = getAuther(token_id);
+    }
+    
+    function getAuther (uint _token_id) public view returns(address) {
+        require(_exists(_token_id), "token has not been minted");
+        return autherOf[_token_id];
+    }
+    
+    function getOwnerOfContract () public view returns (address){
+        return ownerOfContract;
+    }
+    
+    function changeMetadata (uint token_id, string memory new_name, string memory new_description, string memory new_img_url) public onlyOwner {
+        require(_exists(token_id), "token id not exists");
+        id_to_chip[token_id].name = new_name;
+        id_to_chip[token_id].description = new_description;
+        id_to_chip[token_id].img_url = new_img_url;
+    }
+    
+    function changeAuthor(uint token_id, address new_author) public {
+        require(_exists(token_id), "token id not exists");
+        require(new_author != address(0), "address of new author is zero");
+        require(msg.sender == owner(), "have no authority to change the author");
+        autherOf[token_id] = new_author;
+    }
+    
+    function transfer(address from_addr, address to_addr, uint token_id) internal {
+        _transfer(from_addr, to_addr, token_id);
     }
 
-    function titleOf(uint256 token_id) external view returns (string memory) {
+    function buy (uint token_id) public payable {
         require(_exists(token_id), "token not minted");
-        Metadata memory date = id_to_chip[token_id];
-        return date.title;
+        // uint Tex = 1 ether;
+        require(msg.value >= 10000000000 wei, "need more ether");
+        address from_addr = ownerOfChip(token_id);
+        address(uint160(from_addr)).transfer(msg.value/10 * 8);
+        address(uint160(address(this))).transfer(msg.value/10 * 1);
+        address(uint160(autherOf[token_id])).transfer(msg.value/10 * 1);
+        transfer(from_addr, msg.sender, token_id);
     }
-
-    function titleOf(uint16 year, uint8 month, uint8 day) external view returns (string memory) {
-        require(_exists(id(year, month, day)), "token not minted");
-        Metadata memory date = id_to_chip[id(year, month, day)];
-        return date.title;
+    
+    function balanceOfContract() public onlyOwner view returns(uint)  {
+        return address(this).balance;
     }
-
-    function changeTitleOf(uint16 year, uint8 month, uint8 day, string memory title) external {
-        require(_exists(id(year, month, day)), "token not minted");
-        changeTitleOf(id(year, month, day), title);
+    
+    function ethBalance(address _addr) public view returns (uint) {
+        return _addr.balance;
     }
-
-    function changeTitleOf(uint256 token_id, string memory title) public {
-        require(_exists(token_id), "token not minted");
-        require(ownerOf(token_id) == msg.sender, "only the owner of this date can change its title");
-        id_to_chip[token_id].title = title;
+    
+    fallback () external payable{
+         
     }
-
-    function isLeapYear(uint16 year) public pure returns (bool) {
-        require(1 <= year, "year must be bigger or equal 1");
-        return (year % 4 == 0) 
-            && (year % 100 == 0)
-            && (year % 400 == 0);
+    
+    function withdraw () onlyOwner public{
+        msg.sender.transfer(address(this).balance);
     }
-
-    function numDaysInMonth(uint8 month, uint16 year) public pure returns (uint8) {
-        require(1 <= month && month <= 12, "month must be between 1 and 12");
-        require(1 <= year, "year must be bigger or equal 1");
-
-        if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-            return 31;
-        }
-        else if (month == 2) {
-            return isLeapYear(year) ? 29 : 28;
-        }
-        else {
-            return 30;
-        }
-    }
-
-    function timestampToDate(uint timestamp) public pure returns (uint16 year, uint8 month, uint8 day) {
-        int z = int(timestamp / 86400 + 719468);
-        int era = (z >= 0 ? z : z - 146096) / 146097;
-        uint doe = uint(z - era * 146097);
-        uint yoe = (doe - doe/1460 + doe/36524 - doe/146096) / 365;
-        uint doy = doe - (365*yoe + yoe/4 - yoe/100);
-        uint mp = (5*doy + 2)/153;
-
-        day = uint8(doy - (153*mp+2)/5 + 1);
-        month = mp < 10 ? uint8(mp + 3) : uint8(mp - 9);
-        year = uint16(int(yoe) + era * 400 + (month <= 2 ? 1 : 0));
-    }
-
-    function pseudoRNG(uint16 year, uint8 month, uint8 day, string memory title) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(block.timestamp, block.difficulty, year, month, day, title)));
+    
+    receive () payable external {
+        
     }
 }
