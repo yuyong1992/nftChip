@@ -1,4 +1,4 @@
-var MyContract = artifacts.require("Chip");
+var Chip = artifacts.require("Chip");
 
 module.exports = function(deployer) {
   // deployment steps

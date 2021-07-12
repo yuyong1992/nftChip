@@ -26,7 +26,7 @@ contract Chip is Ownable, ERC721 {
     }
 
     function mint(string name, string description, string img_url, uint token_id) internal {
-        // uint256 toke_id = id(year, month, day);
+        // uint256 token_id = id(year, month, day);
         
         id_to_chip[token_id] = Metadata(name, description);
         _safeMint(msg.sender, token_id);
@@ -38,19 +38,19 @@ contract Chip is Ownable, ERC721 {
     }
 
     function ownerOf(uint token_id) public view returns(address) {
-        return ownerOf(toke_id);
+        return ownerOf(token_id);
     }
 
-    function get(uint256 toke_id) external view returns (string name, string description) {
-        require(_exists(toke_id), "token not minted");
-        Metadata memory chip = id_to_chip[toke_id];
+    function get(uint256 token_id) external view returns (string name, string description) {
+        require(_exists(token_id), "token not minted");
+        Metadata memory chip = id_to_chip[token_id];
         name = chip.name;
         description = chip.description;
     }
 
-    function titleOf(uint256 toke_id) external view returns (string memory) {
-        require(_exists(toke_id), "token not minted");
-        Metadata memory date = id_to_chip[toke_id];
+    function titleOf(uint256 token_id) external view returns (string memory) {
+        require(_exists(token_id), "token not minted");
+        Metadata memory date = id_to_chip[token_id];
         return date.title;
     }
 
@@ -65,10 +65,10 @@ contract Chip is Ownable, ERC721 {
         changeTitleOf(id(year, month, day), title);
     }
 
-    function changeTitleOf(uint256 toke_id, string memory title) public {
-        require(_exists(toke_id), "token not minted");
-        require(ownerOf(toke_id) == msg.sender, "only the owner of this date can change its title");
-        id_to_chip[toke_id].title = title;
+    function changeTitleOf(uint256 token_id, string memory title) public {
+        require(_exists(token_id), "token not minted");
+        require(ownerOf(token_id) == msg.sender, "only the owner of this date can change its title");
+        id_to_chip[token_id].title = title;
     }
 
     function isLeapYear(uint16 year) public pure returns (bool) {
