@@ -5,17 +5,9 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 
 contract Chip is Ownable, ERC721{
-    // struct Metadata {
-    //     string name;
-    //     string description;
-    //     string img_url;
-    // }
-    
     // 合约的所有者，存在变量中方便有需要直接调用
     address ownerOfContract = msg.sender;
-    
-    // token和元数据的对应
-    // mapping(uint256 => Metadata) id_to_chip;
+
     // token和创作者的对应
     mapping(uint256 => address) authorOf;
 
@@ -25,7 +17,6 @@ contract Chip is Ownable, ERC721{
     // event ChangeAuthor(address indexed Modifier, address befor_addr, address indexed after_addr, uint256 indexed token_id);
     // event Buy(address indexed from, address indexed to, uint256 token_id);
     
-
 
     constructor() ERC721("Nft.Chip", "CHIP") {
         // 这里 baseURI 需要修改为我们的后台接口
@@ -62,12 +53,10 @@ contract Chip is Ownable, ERC721{
     }
 
     function setTokenURI(uint256 token_id, string memory _tokenURI) public onlyOwner {
-        // require(msg.sender == ownerOfContract, "only the owner of contract can set the tokenURI");
         _setTokenURI(token_id, _tokenURI);
     }
 
     function mint(address to, address author, uint token_id) public onlyOwner {
-        // id_to_chip[token_id] = Metadata(name, description, img_url);
         authorOf[token_id] = author;
         _safeMint(to, token_id);
         // emit Mint(to, author, token_id);
@@ -75,9 +64,7 @@ contract Chip is Ownable, ERC721{
 
     function create(address author, uint token_id) external payable {
         // 需要确定创建NFT需不需要花钱
-        require(msg.value >= 100000000000000 wei, "create a Chip cost at least 100000000000000 wei");
         mint(msg.sender, author, token_id);
-        // payable(owner()).transfer(msg.value);
         address(uint160(owner())).transfer(msg.value);
         // emit create(msg.sender, author, token_id);
     }
@@ -85,15 +72,6 @@ contract Chip is Ownable, ERC721{
     function ownerOfChip(uint token_id) public view returns(address) {
         return ownerOf(token_id);
     }
-
-    // function get(uint256 token_id) external view returns (string memory name, string memory description, string memory img_url, address author) {
-    //     require(_exists(token_id), "token not minted");
-    //     Metadata memory chip = id_to_chip[token_id];
-    //     name = chip.name;
-    //     description = chip.description;
-    //     img_url = chip.img_url;
-    //     author = getauthor(token_id);
-    // }
     
     function getauthor (uint _token_id) public view returns(address) {
         require(_exists(_token_id), "token has not been minted");
@@ -103,13 +81,6 @@ contract Chip is Ownable, ERC721{
     function getOwnerOfContract () public view returns (address){
         return ownerOfContract;
     }
-    
-    // function changeMetadata (uint token_id, string memory new_name, string memory new_description, string memory new_img_url) public onlyOwner {
-    //     require(_exists(token_id), "token id not exists");
-    //     id_to_chip[token_id].name = new_name;
-    //     id_to_chip[token_id].description = new_description;
-    //     id_to_chip[token_id].img_url = new_img_url;
-    // }
     
     function changeAuthor(uint token_id, address new_author) public {
         require(_exists(token_id), "token id not exists");
@@ -127,10 +98,8 @@ contract Chip is Ownable, ERC721{
     function buy (uint token_id) public payable {
         require(_exists(token_id), "token not minted");
         require(ownerOfChip(token_id) != msg.sender, "already the owner");
-        require(msg.value >= 10000000000 wei, "need more ether");
-        // address from_addr = ownerOfChip(token_id);
+        // 原owner:创作者:平台 = 88:6:6
         address(uint160(ownerOfChip(token_id))).transfer(msg.value/100 * 88);
-        // address(uint160(address(this))).transfer(msg.value/100 * 6);
         address(uint160(authorOf[token_id])).transfer(msg.value/100 * 6);
         transfer(ownerOfChip(token_id), msg.sender, token_id);
         // emit Buy(from_addr, msg.sender, token_id);
