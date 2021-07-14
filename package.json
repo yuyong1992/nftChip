@@ -14,5 +14,8 @@
     "dotenv": "^8.2.0",
     "ethereumjs-tx": "^2.1.2",
     "web3": "^1.4.0"
+  },
+  "devDependencies": {
+    "eth-gas-reporter": "^0.2.22"
   }
 }
