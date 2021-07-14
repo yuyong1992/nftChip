@@ -52,7 +52,7 @@ contract Chip is Ownable, ERC721{
         _setTokenURI(token_id, _tokenURI);
     }
 
-    function mint(address to, address author, uint token_id) public onlyOwner {
+    function mint(address to, address author, uint token_id) public {
         authorOf[token_id] = author;
         _safeMint(to, token_id);
         emit Mint(to, author, token_id);
